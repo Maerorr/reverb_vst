@@ -367,7 +367,7 @@ impl Reverb {
                 for comb in self.right_combs.iter_mut() {
                     y += comb.process_right(x);
                 }
-                y *= 0.25;
+                y *= 0.15;
             },
             ReverbType::Schroeder => {
                 for (i, comb) in self.right_combs.iter_mut().enumerate() {
@@ -377,7 +377,7 @@ impl Reverb {
                         y -= comb.process_right(x);
                     }
                 }
-                y *= 0.25;
+                y *= 0.15;
                 for allpass in self.right_allpasses.iter_mut() {
                     y = allpass.process_right(y);
                 }
@@ -390,7 +390,7 @@ impl Reverb {
                         y -= comb.process_right(x);
                     }
                 }
-                y /= 6.0;
+                y /= 10.0;
             },
             ReverbType::Moorer => {
                 for (i, comb) in self.right_combs.iter_mut().enumerate() {
@@ -400,7 +400,7 @@ impl Reverb {
                         y -= comb.process_right(x);
                     }
                 }
-                y /= 6.0;
+                y /= 10.0;
                 for allpass in self.right_allpasses.iter_mut() {
                     y = allpass.process_right(y);
                 }
