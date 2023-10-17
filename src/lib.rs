@@ -15,10 +15,6 @@ mod comb;
 mod delayingallpass;
 mod reverb;
 
-struct TestingGit {
-    test: i32,
-}
-
 const MAX_BLOCK_SIZE: usize = 64;
 
 struct ReverbPlugin {
@@ -28,7 +24,6 @@ struct ReverbPlugin {
     lpf_comb_reverb: reverb::Reverb,
     lpf_schroeder_reverb: reverb::Reverb,
     sample_rate: f32,
-    chorus: Chorus,
 }
 
 // struct ScratchBuffer {
@@ -69,9 +64,6 @@ struct ReverbPluginParams {
 
     #[id = "dry"]
     dry: FloatParam,
-
-    #[id = "use chorus"]
-    use_chorus: BoolParam,
 }
 
 impl Default for ReverbPlugin {
@@ -103,7 +95,6 @@ impl Default for ReverbPlugin {
                 reverb::ReverbType::Schroeder,
                 0.2,
             ),
-            chorus: Chorus::new(44100.0, 20.0, 0.1, 10.0, 0.25, 1.0, 1.0),
         }
     }
 }
@@ -138,9 +129,6 @@ impl Default for ReverbPluginParams {
             .with_smoother(SmoothingStyle::Linear(10.0))
             .with_value_to_string(formatters::v2s_f32_percentage(2))
             .with_string_to_value(formatters::s2v_f32_percentage()),
-
-            use_chorus: BoolParam::new("Use Chorus", false),
-
         }
     }
 }
@@ -191,7 +179,6 @@ impl Plugin for ReverbPlugin {
         self.schroeder_reverb.resize_buffers(self.sample_rate);
         self.lpf_comb_reverb.resize_buffers(self.sample_rate);
         self.lpf_schroeder_reverb.resize_buffers(self.sample_rate);
-        self.chorus.set_params(2.0 * self.sample_rate, 25.0, 0.2, 10.0, 0.2, 0.8, 1.0);
         // Resize buffers and perform other potentially expensive initialization operations here.
         // The `reset()` function is always called right after this function. You can remove this
         // function if you do not need it.
@@ -224,7 +211,6 @@ impl Plugin for ReverbPlugin {
             let damping = self.params.damping.smoothed.next();
             let wet = self.params.wet.smoothed.next();
             let dry = self.params.dry.smoothed.next();
-            let use_chorus = self.params.use_chorus.value();
 
             match reverb_type {
                 reverb::ReverbType::Comb => {
@@ -242,41 +228,34 @@ impl Plugin for ReverbPlugin {
             };
 
             for (num, sample) in channel_samples.into_iter().enumerate() {
-                let x = *sample;
                 if num == 0 {
-                    if use_chorus  {
-                        *sample = self.chorus.process_left(x);
-                    }
                     match reverb_type {
                         reverb::ReverbType::Comb => {
-                            *sample = x * dry + wet * self.comb_reverb.process_left(*sample)
+                            *sample = *sample * dry + wet * self.comb_reverb.process_left(*sample)
                         },
                         reverb::ReverbType::Schroeder => {
-                            *sample = x * dry + wet * self.schroeder_reverb.process_left(*sample)
+                            *sample = *sample * dry + wet * self.schroeder_reverb.process_left(*sample)
                         },
                         reverb::ReverbType::LpfComb => {
-                            *sample = x * dry + wet * self.lpf_comb_reverb.process_left(*sample)
+                            *sample = *sample * dry + wet * self.lpf_comb_reverb.process_left(*sample)
                         },
                         reverb::ReverbType::Moorer => {
-                            *sample = x * dry + wet * self.lpf_schroeder_reverb.process_left(*sample)
+                            *sample = *sample * dry + wet * self.lpf_schroeder_reverb.process_left(*sample)
                         },
                     }
                 } else {
-                    if use_chorus  {
-                        *sample = self.chorus.process_right(x);
-                    }
                     match reverb_type {
                         reverb::ReverbType::Comb => {
-                            *sample = x * dry + wet * self.comb_reverb.process_right(*sample)
+                            *sample = *sample * dry + wet * self.comb_reverb.process_right(*sample)
                         },
                         reverb::ReverbType::Schroeder => {
-                            *sample = x * dry + wet * self.schroeder_reverb.process_right(*sample)
+                            *sample = *sample * dry + wet * self.schroeder_reverb.process_right(*sample)
                         },
                         reverb::ReverbType::LpfComb => {
-                            *sample = x * dry + wet * self.lpf_comb_reverb.process_right(*sample)
+                            *sample = *sample * dry + wet * self.lpf_comb_reverb.process_right(*sample)
                         },
                         reverb::ReverbType::Moorer => {
-                            *sample = x * dry + wet * self.lpf_schroeder_reverb.process_right(*sample)
+                            *sample = *sample * dry + wet * self.lpf_schroeder_reverb.process_right(*sample)
                         },
                     }
                 }

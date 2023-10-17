@@ -64,10 +64,6 @@ pub(crate) fn create(
                         .font_size(15.0)
                         .height(Pixels(30.0));
 
-                        Label::new(cx, "use chorus")
-                        .font_size(15.0)
-                        .height(Pixels(30.0));
-
                         Label::new(cx, "wet")
                         .font_size(15.0)
                         .height(Pixels(30.0));
@@ -89,9 +85,6 @@ pub(crate) fn create(
                         .height(Pixels(30.0));
 
                         ParamSlider::new(cx, Data::filter_data, |params| &params.comb_type)
-                        .height(Pixels(30.0));
-
-                        ParamButton::new(cx, Data::filter_data, |params| &params.use_chorus)
                         .height(Pixels(30.0));
 
                         ParamSlider::new(cx, Data::filter_data, |params| &params.wet)

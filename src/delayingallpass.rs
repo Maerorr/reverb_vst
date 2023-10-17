@@ -27,7 +27,6 @@ impl DelayingAllPass {
             = Box::new(VecDeque::with_capacity(sample_rate as usize));
         let mut right_y_buffer: Box<VecDeque<f32>>
             = Box::new(VecDeque::with_capacity(sample_rate as usize));
-            
         for _ in 0..(sample_rate as usize) {
             left_x_buffer.push_front(0.0);
             right_x_buffer.push_front(0.0);
