@@ -4,6 +4,7 @@ use rand::distributions::uniform::SampleRange;
 
 use crate::{delay::Delay, lfo};
 
+#[derive(Clone)]
 pub struct Chorus {
     left_delays: Vec<Delay>,
     right_delays: Vec<Delay>,

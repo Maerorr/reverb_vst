@@ -2,6 +2,7 @@ use std::{f32::consts::PI, ops::Range};
 
 use rand::Rng;
 
+#[derive(Clone)]
 pub struct LFO {
     pub rate: f32,
     phase: f32,

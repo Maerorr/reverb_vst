@@ -72,7 +72,12 @@ pub(crate) fn create(
                         .font_size(15.0)
                         .height(Pixels(30.0));
 
-                    }).child_top(Pixels(6.0));
+                        Label::new(cx, "enable chorus")
+                        .font_size(15.0)
+                        .height(Pixels(30.0));
+
+                    }).child_top(Pixels(6.0))
+                    .row_between(Pixels(10.0));
     
                     VStack::new(cx, |cx| {
                         ParamSlider::new(cx, Data::filter_data, |params| &params.reverb_type)
@@ -92,8 +97,11 @@ pub(crate) fn create(
 
                         ParamSlider::new(cx, Data::filter_data, |params| &params.dry)
                         .height(Pixels(30.0));
+                
+                        ParamButton::new(cx, Data::filter_data, |params| &params.enable_chorus)
+                        .height(Pixels(30.0));
                     });
-                }).col_between(Pixels(30.0));
+                }).col_between(Pixels(30.0)).row_between(Pixels(10.0));
                 
             }).row_between(Pixels(0.0))
             .child_left(Stretch(1.0))

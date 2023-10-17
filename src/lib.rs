@@ -26,22 +26,6 @@ struct ReverbPlugin {
     sample_rate: f32,
 }
 
-// struct ScratchBuffer {
-//     cutoff: [f32; MAX_BLOCK_SIZE],
-//     resonance: [f32; MAX_BLOCK_SIZE],
-//     gain: [f32; MAX_BLOCK_SIZE],
-// }
-
-// impl Default for ScratchBuffer {
-//     fn default() -> Self {
-//         Self {
-//             cutoff: [0.0; MAX_BLOCK_SIZE],
-//             resonance: [0.0; MAX_BLOCK_SIZE],
-//             gain: [0.0; MAX_BLOCK_SIZE],
-//         }
-//     }
-// }
-
 #[derive(Params)]
 struct ReverbPluginParams {
     #[persist = "editor-state"]
@@ -64,6 +48,9 @@ struct ReverbPluginParams {
 
     #[id = "dry"]
     dry: FloatParam,
+
+    #[id = "enable chorus"]
+    enable_chorus: BoolParam,
 }
 
 impl Default for ReverbPlugin {
@@ -129,6 +116,8 @@ impl Default for ReverbPluginParams {
             .with_smoother(SmoothingStyle::Linear(10.0))
             .with_value_to_string(formatters::v2s_f32_percentage(2))
             .with_string_to_value(formatters::s2v_f32_percentage()),
+
+            enable_chorus: BoolParam::new("Enable Chorus", false),
         }
     }
 }
@@ -211,19 +200,20 @@ impl Plugin for ReverbPlugin {
             let damping = self.params.damping.smoothed.next();
             let wet = self.params.wet.smoothed.next();
             let dry = self.params.dry.smoothed.next();
+            let enable_chorus = self.params.enable_chorus.value();
 
             match reverb_type {
                 reverb::ReverbType::Comb => {
-                    self.comb_reverb.set_params_comb(decay, comb_type);
+                    self.comb_reverb.set_params_comb(decay, comb_type, enable_chorus);
                 },
                 reverb::ReverbType::Schroeder => {
-                    self.schroeder_reverb.set_params_schroeder(decay, damping, comb_type)
+                    self.schroeder_reverb.set_params_schroeder(decay, damping, comb_type, enable_chorus)
                 },
                 reverb::ReverbType::LpfComb => {
-                    self.lpf_comb_reverb.set_params_lpfcomb(decay, damping, comb_type);
+                    self.lpf_comb_reverb.set_params_lpfcomb(decay, damping, comb_type, enable_chorus);
                 },
                 reverb::ReverbType::Moorer => {
-                    self.lpf_schroeder_reverb.set_params_moorer(decay, damping, comb_type)
+                    self.lpf_schroeder_reverb.set_params_moorer(decay, damping, comb_type, enable_chorus)
                 },
             };
 

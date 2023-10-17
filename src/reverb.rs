@@ -1,7 +1,7 @@
 use nih_plug::prelude::Enum;
 use rand::Rng;
 
-use crate::{delayingallpass::DelayingAllPass, comb::{CombFilter, CombType}};
+use crate::{delayingallpass::DelayingAllPass, comb::{CombFilter, CombType}, chorus::Chorus};
 
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -50,6 +50,8 @@ pub struct Reverb {
     decay: f32,
     reverb_type: ReverbType,
     sample_rate: f32,
+    enable_chorus: bool,
+    choruses: Vec<Chorus>,
 }
 
 impl Reverb {
@@ -60,6 +62,11 @@ impl Reverb {
         let mut right_allpasses = Vec::new();
 
         let mut rng = rand::thread_rng();
+
+        let mut choruses: Vec<Chorus> = Vec::new();
+        for _ in 0..6 {
+            choruses.push(Chorus::new(sample_rate, 25.0, 0.3, 10.0, 0.25, 0.7, 0.3));
+        }
 
         match reverb_type {
             ReverbType::Comb => {
@@ -204,6 +211,8 @@ impl Reverb {
             decay,
             reverb_type,
             sample_rate,
+            enable_chorus: false,
+            choruses,
         }
     }
 
@@ -221,9 +230,13 @@ impl Reverb {
         for allpass in self.right_allpasses.iter_mut() {
             allpass.resize_buffers(sample_rate);
         }
+
+        for chorus in self.choruses.iter_mut() {
+            chorus.resize_buffers(sample_rate);
+        }
     }
 
-    pub fn set_params_comb(&mut self, decay: f32, comb_type: CombType) {
+    pub fn set_params_comb(&mut self, decay: f32, comb_type: CombType, enable_chorus: bool) {
         self.decay = decay;
         for comb in self.left_combs.iter_mut() {
             let power = -(3.0 * comb.get_delay_ms() / 1000.0 ) / (decay / 1000.0) ;
@@ -239,9 +252,10 @@ impl Reverb {
 
             comb.set_params( g, false, 0.0, comb_type)
         }
+        self.enable_chorus = enable_chorus;
     }
 
-    pub fn set_params_schroeder(&mut self, decay: f32, damp: f32, comb_type: CombType) {
+    pub fn set_params_schroeder(&mut self, decay: f32, damp: f32, comb_type: CombType, enable_chorus: bool) {
         self.decay = decay;
         for comb in self.left_combs.iter_mut() {
             let power = -(3.0 * comb.get_delay_ms() / 1000.0 ) / (decay / 1000.0) ;
@@ -257,9 +271,10 @@ impl Reverb {
 
             comb.set_params( g, false, damp, comb_type)
         }
+        self.enable_chorus = enable_chorus;
     }
 
-    pub fn set_params_lpfcomb(&mut self, decay: f32, damp: f32, comb_type: CombType) {
+    pub fn set_params_lpfcomb(&mut self, decay: f32, damp: f32, comb_type: CombType, enable_chorus: bool) {
         self.decay = decay;
         for comb in self.left_combs.iter_mut() {
             let power = -(3.0 * comb.get_delay_ms() / 1000.0 ) / (decay / 1000.0) ;
@@ -283,9 +298,10 @@ impl Reverb {
 
             comb.set_params( new_g, true, damp, comb_type)
         }
+        self.enable_chorus = enable_chorus;
     }
 
-    pub fn set_params_moorer(&mut self, decay: f32, damp: f32, comb_type: CombType) {
+    pub fn set_params_moorer(&mut self, decay: f32, damp: f32, comb_type: CombType, enable_chorus: bool) {
         self.decay = decay;
         for comb in self.left_combs.iter_mut() {
             let power = -(3.0 * comb.get_delay_ms() / 1000.0 ) / (decay / 1000.0) ;
@@ -309,49 +325,66 @@ impl Reverb {
 
             comb.set_params( new_g, true, damp,comb_type)
         }
+        self.enable_chorus = enable_chorus;
     }
 
     pub fn process_left(&mut self, x: f32) -> f32 {
         let mut y = 0.0;
         match self.reverb_type {
             ReverbType::Comb => {
-                for comb in self.left_combs.iter_mut() {
-                    y += comb.process_left(x);
+                for (i, comb) in self.left_combs.iter_mut().enumerate() {
+                    let mut chorused_x = x;
+                    if self.enable_chorus {
+                        chorused_x = self.choruses[i].process_left(x);
+                    }
+                    y += comb.process_left(chorused_x);
                 }
-                y *= 0.25;
+                y *= 0.15;
             },
             ReverbType::Schroeder => {
                 for (i, comb) in self.left_combs.iter_mut().enumerate() {
+                    let mut chorused_x = x;
+                    if self.enable_chorus {
+                        chorused_x = self.choruses[i].process_left(x);
+                    }
                     if i % 2 == 0 {
-                        y += comb.process_left(x);
+                        y += comb.process_left(chorused_x);
                     } else {
-                        y -= comb.process_left(x);
+                        y -= comb.process_left(chorused_x);
                     }
                 }
-                y *= 0.25;
+                y *= 0.15;
                 for allpass in self.left_allpasses.iter_mut() {
                     y = allpass.process_left(y);
                 }
             },
             ReverbType::LpfComb => {
                 for (i, comb) in self.left_combs.iter_mut().enumerate() {
+                    let mut chorused_x = x;
+                    if self.enable_chorus {
+                        chorused_x = self.choruses[i].process_left(x);
+                    }
                     if i % 2 == 0 {
-                        y += comb.process_left(x);
+                        y += comb.process_left(chorused_x);
                     } else {
-                        y -= comb.process_left(x);
+                        y -= comb.process_left(chorused_x);
                     }
                 }
-                y /= 6.0;
+                y /= 10.0;
             },
             ReverbType::Moorer => {
                 for (i, comb) in self.left_combs.iter_mut().enumerate() {
+                    let mut chorused_x = x;
+                    if self.enable_chorus {
+                        chorused_x = self.choruses[i].process_left(x);
+                    }
                     if i % 2 == 0 {
-                        y += comb.process_left(x);
+                        y += comb.process_left(chorused_x);
                     } else {
-                        y -= comb.process_left(x);
+                        y -= comb.process_left(chorused_x);
                     }
                 }
-                y /= 6.0;
+                y /= 10.0;
                 for allpass in self.left_allpasses.iter_mut() {
                     y = allpass.process_left(y);
                 }
@@ -364,17 +397,25 @@ impl Reverb {
         let mut y = 0.0;
         match self.reverb_type {
             ReverbType::Comb => {
-                for comb in self.right_combs.iter_mut() {
-                    y += comb.process_right(x);
+                for (i, comb) in self.right_combs.iter_mut().enumerate() {
+                    let mut chorused_x = x;
+                    if self.enable_chorus {
+                        chorused_x = self.choruses[i].process_right(x);
+                    }
+                    y += comb.process_right(chorused_x);
                 }
                 y *= 0.25;
             },
             ReverbType::Schroeder => {
                 for (i, comb) in self.right_combs.iter_mut().enumerate() {
+                    let mut chorused_x = x;
+                    if self.enable_chorus {
+                        chorused_x = self.choruses[i].process_right(x);
+                    }
                     if i % 2 == 0 {
-                        y += comb.process_right(x);
+                        y += comb.process_right(chorused_x);
                     } else {
-                        y -= comb.process_right(x);
+                        y -= comb.process_right(chorused_x);
                     }
                 }
                 y *= 0.25;
@@ -384,20 +425,28 @@ impl Reverb {
             },
             ReverbType::LpfComb => {
                 for (i, comb) in self.right_combs.iter_mut().enumerate() {
+                    let mut chorused_x = x;
+                    if self.enable_chorus {
+                        chorused_x = self.choruses[i].process_right(x);
+                    }
                     if i % 2 == 0 {
-                        y += comb.process_right(x);
+                        y += comb.process_right(chorused_x);
                     } else {
-                        y -= comb.process_right(x);
+                        y -= comb.process_right(chorused_x);
                     }
                 }
                 y /= 6.0;
             },
             ReverbType::Moorer => {
                 for (i, comb) in self.right_combs.iter_mut().enumerate() {
+                    let mut chorused_x = x;
+                    if self.enable_chorus {
+                        chorused_x = self.choruses[i].process_right(x);
+                    }
                     if i % 2 == 0 {
-                        y += comb.process_right(x);
+                        y += comb.process_right(chorused_x);
                     } else {
-                        y -= comb.process_right(x);
+                        y -= comb.process_right(chorused_x);
                     }
                 }
                 y /= 6.0;
