@@ -18,7 +18,7 @@ struct Data {
 impl Model for Data {}
 
 pub(crate) fn default_state() -> Arc<ViziaState> {
-    ViziaState::new(|| (400, 300))
+    ViziaState::new(|| (400, 350))
 }
 
 pub(crate) fn create(
@@ -77,7 +77,7 @@ pub(crate) fn create(
                         .height(Pixels(30.0));
 
                     }).child_top(Pixels(6.0))
-                    .row_between(Pixels(10.0));
+                    .row_between(Pixels(3.0));
     
                     VStack::new(cx, |cx| {
                         ParamSlider::new(cx, Data::filter_data, |params| &params.reverb_type)
@@ -100,8 +100,8 @@ pub(crate) fn create(
                 
                         ParamButton::new(cx, Data::filter_data, |params| &params.enable_chorus)
                         .height(Pixels(30.0));
-                    });
-                }).col_between(Pixels(30.0)).row_between(Pixels(10.0));
+                    }).row_between(Pixels(3.0));
+                }).col_between(Pixels(30.0));
                 
             }).row_between(Pixels(0.0))
             .child_left(Stretch(1.0))
