@@ -65,7 +65,7 @@ impl Reverb {
 
         let mut choruses: Vec<Chorus> = Vec::new();
         for _ in 0..6 {
-            choruses.push(Chorus::new(sample_rate, 25.0, 0.3, 10.0, 0.25, 0.7, 0.3));
+            choruses.push(Chorus::new(sample_rate, 25.0, 0.5, 10.0, 0.25, 1.0, 0.2));
         }
 
         match reverb_type {

@@ -8,6 +8,7 @@ use nih_plug_vizia::{assets, create_vizia_editor, ViziaState, ViziaTheming};
 
 
 use crate::ReverbPluginParams;
+use crate::reverb::ReverbType;
 
 
 #[derive(Lens)]
@@ -76,8 +77,7 @@ pub(crate) fn create(
                         .font_size(15.0)
                         .height(Pixels(30.0));
 
-                    }).child_top(Pixels(6.0))
-                    .row_between(Pixels(3.0));
+                    }).child_top(Pixels(6.0)).row_between(Pixels(3.0));
     
                     VStack::new(cx, |cx| {
                         ParamSlider::new(cx, Data::filter_data, |params| &params.reverb_type)
